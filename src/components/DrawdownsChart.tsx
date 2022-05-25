@@ -13,7 +13,7 @@ const Plot = styled.div`
 `;
 
 const getName = (drawdown: Drawdown): string =>
-  drawdown.top.date?.toString() ?? "foo"; // formatDate(drawdown.top.date, "PP");
+  formatDate(drawdown.top.date, "PP");
 
 export const DrawdownsChart = ({
   drawdowns,
@@ -34,9 +34,9 @@ export const DrawdownsChart = ({
   const data = useMemo<Plotly.Data[]>(
     () => [
       {
-        labels: maxDrawdowns.map(getName),
         mode: "text+markers",
         name: "Max drawdown",
+        text: maxDrawdowns.map(getName),
         type: "scatter3d",
         x: maxDrawdowns.map(({ daysTopToBottom }) => daysTopToBottom),
         xaxis: "Top to bottom (days)",

@@ -1,3 +1,5 @@
+import { RawDate } from "./date";
+
 export type Price = {
   date: Date;
   price: number;
@@ -14,4 +16,10 @@ export type Drawdown = {
   recovery: Date | null;
   daysTopToBottom: number;
   daysBottomToRecovery: number | null;
+};
+
+export type RawDrawdown = Omit<Drawdown, "top" | "bottom" | "recovery"> & {
+  top: RawDate<Drawdown["top"]>;
+  bottom: RawDate<Drawdown["bottom"]>;
+  recovery: string | null;
 };
