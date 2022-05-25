@@ -1,7 +1,13 @@
 import { css } from "@emotion/react";
 import type { NextPage } from "next";
+import dynamic from "next/dynamic";
 import Head from "next/head";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
+
+const DynamicDrawdownsChart = dynamic(import("../components/DrawdownsChart"), {
+  ssr: false,
+});
+
 import { Drawdown } from "../types";
 
 const stockName = "smt";
@@ -63,7 +69,7 @@ const Home: NextPage = () => {
         <p>Loading...</p>
       ) : (
         <div>
-          {error && (
+          {error ? (
             <pre
               css={css`
                 color: red;
@@ -71,8 +77,9 @@ const Home: NextPage = () => {
             >
               {error}
             </pre>
+          ) : (
+            <DynamicDrawdownsChart drawdowns={drawdowns} />
           )}
-          <pre>{JSON.stringify(drawdowns)}</pre>
         </div>
       )}
     </div>
