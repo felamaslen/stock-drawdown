@@ -9,17 +9,9 @@ import { NextApiRequest, NextApiResponse } from "next";
 import path from "path";
 
 import { config } from "../../config";
+import { Drawdown, Price } from "../../types";
 
 const RAW_DIR = path.resolve(config.root, "src/prices");
-
-type Price = {
-  date: Date;
-  price: number;
-  open: number;
-  high: number;
-  low: number;
-  changePct: number;
-};
 
 // TODO: persistent database
 const cache: Map<string, Price[]> = new Map();
@@ -67,15 +59,6 @@ async function parseRawFiles(): Promise<Record<string, Price[]>> {
     return result ? { ...prev, [name]: result } : prev;
   }, {});
 }
-
-type Drawdown = {
-  top: Pick<Price, "date" | "price">;
-  bottom: Pick<Price, "date" | "price">;
-  declinePct: number;
-  recovery: Date | null;
-  daysTopToBottom: number;
-  daysBottomToRecovery: number | null;
-};
 
 function getDrawdowns(prices: Price[]): Drawdown[] {
   const sortedPrices = prices
