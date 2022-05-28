@@ -20,13 +20,55 @@ export const DrawdownsChart = ({
 }: {
   drawdowns: Drawdown[];
 }): JSX.Element => {
-  const maxDrawdowns = useMemo<Drawdown[]>(
+  const keyed = useMemo<(Drawdown & { key: number })[]>(
+    () => drawdowns.map((drawdown, index) => ({ ...drawdown, key: index })),
+    [drawdowns]
+  );
+
+  const maxDrawdowns = useMemo(
     () =>
-      drawdowns
+      keyed
         .slice()
         .sort((a, b) => b.declinePct - a.declinePct)
         .slice(0, 10),
-    [drawdowns]
+    [keyed]
+  );
+
+  const maxDropTime = useMemo(
+    () =>
+      keyed
+        .slice()
+        .sort((a, b) => b.daysTopToBottom - a.daysTopToBottom)
+        .slice(0, 10),
+    [keyed]
+  );
+
+  const maxRecoveryTime = useMemo(
+    () =>
+      keyed
+        .slice()
+        .sort((a, b) => {
+          if (a.daysBottomToRecovery && b.daysBottomToRecovery) {
+            return b.daysBottomToRecovery - a.daysBottomToRecovery;
+          }
+          return a.daysBottomToRecovery ? 1 : 0;
+        })
+        .slice(0, 10),
+    [keyed]
+  );
+
+  const toPlot = useMemo<Drawdown[]>(
+    () =>
+      [maxDrawdowns, maxDropTime].reduce(
+        (prev, group) =>
+          prev.concat(
+            group.filter(
+              ({ key }) => !prev.some((drawdown) => drawdown.key === key)
+            )
+          ),
+        []
+      ),
+    [maxDrawdowns, maxDropTime]
   );
 
   const plot = useRef<HTMLDivElement>(null);
@@ -36,18 +78,16 @@ export const DrawdownsChart = ({
       {
         mode: "text+markers",
         name: "Max drawdown",
-        text: maxDrawdowns.map(getName),
+        text: toPlot.map(getName),
         type: "scatter3d",
-        x: maxDrawdowns.map(({ daysTopToBottom }) => daysTopToBottom),
+        x: toPlot.map(({ daysTopToBottom }) => daysTopToBottom),
         xaxis: "Top to bottom (days)",
-        y: maxDrawdowns.map(
-          ({ daysBottomToRecovery }) => daysBottomToRecovery ?? 0
-        ),
+        y: toPlot.map(({ daysBottomToRecovery }) => daysBottomToRecovery ?? 0),
         yaxis: "Recovery from bottom (days)",
-        z: maxDrawdowns.map(({ declinePct }) => declinePct),
+        z: toPlot.map(({ declinePct }) => declinePct),
       },
     ],
-    [maxDrawdowns]
+    [toPlot]
   );
 
   const layout = useMemo<Partial<Plotly.Layout>>(
