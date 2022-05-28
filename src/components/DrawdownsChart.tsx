@@ -105,8 +105,8 @@ function drawAxes({
 
   // X axis
   ctx.beginPath();
-  ctx.moveTo(pixX(minX), pixY(0));
-  ctx.lineTo(pixX(maxX), pixY(0));
+  ctx.moveTo(pixX(minX), pixY(minY));
+  ctx.lineTo(pixX(maxX), pixY(minY));
   ctx.stroke();
 
   // Axis labels
@@ -128,7 +128,11 @@ function drawAxes({
       ctx.lineTo(pixX(minX) - 4, pixY(yValue));
       ctx.stroke();
 
-      ctx.fillText(`${yValue}`, pixX(minX) - 6, pixY(yValue));
+      ctx.fillText(
+        `${(10 ** yValue).toFixed(1)}`,
+        pixX(minX) - 6,
+        pixY(yValue)
+      );
     });
 
   // X axis labels
@@ -143,14 +147,14 @@ function drawAxes({
       const indent = index % 2 === 0 ? 6 : 16;
 
       ctx.beginPath();
-      ctx.moveTo(pixX(xValue), pixY(0));
-      ctx.lineTo(pixX(xValue), pixY(0) + 4);
+      ctx.moveTo(pixX(xValue), pixY(minY));
+      ctx.lineTo(pixX(xValue), pixY(minY) + 4);
       ctx.stroke();
 
       ctx.fillText(
         `${formatDate(fromUnixTime(xValue), "yyyy-MM-dd")}`,
         pixX(xValue),
-        pixY(0) + indent
+        pixY(minY) + indent
       );
     });
 }
@@ -209,8 +213,8 @@ function drawDrawdowns({
     const topX = pixX(getUnixTime(top.date));
     const bottomX = pixX(getUnixTime(bottom.date));
 
-    const topY = pixY(top.price);
-    const bottomY = pixY(bottom.price);
+    const topY = pixY(Math.log10(top.price));
+    const bottomY = pixY(Math.log10(bottom.price));
 
     ctx.moveTo(topX, topY);
     ctx.lineTo(bottomX, bottomY);
@@ -240,8 +244,8 @@ function drawDrawdowns({
       const topX = pixX(getUnixTime(top.date));
       const bottomX = pixX(getUnixTime(bottom.date));
 
-      const topY = pixY(bottom.price);
-      const bottomY = pixY(bottom.price);
+      const topY = pixY(Math.log10(bottom.price));
+      const bottomY = topY;
 
       ctx.moveTo(topX, topY);
       ctx.lineTo(bottomX, bottomY);
@@ -273,7 +277,7 @@ function drawDrawdowns({
       const topX = pixX(getUnixTime(bottom.date));
       const bottomX = pixX(getUnixTime(recovery.date));
 
-      const topY = pixY(top.price);
+      const topY = pixY(Math.log10(top.price));
       const bottomY = topY;
 
       ctx.moveTo(topX, topY);
@@ -347,7 +351,7 @@ export const DrawdownsChart = ({
     () =>
       sortedPrices.map<Point>(({ date, price }) => ({
         x: getUnixTime(date),
-        y: price,
+        y: Math.log10(price),
       })),
     [sortedPrices]
   );
@@ -361,23 +365,28 @@ export const DrawdownsChart = ({
       (prev, { x }) => Math.max(prev, x),
       -Infinity
     );
-    const minY = points.reduce<number>((prev, { y }) => Math.min(prev, y), 0);
+    const minY = points.reduce<number>(
+      (prev, { y }) => Math.min(prev, y),
+      Infinity
+    );
     const maxY = points.reduce<number>(
       (prev, { y }) => Math.max(prev, y),
       -Infinity
     );
 
     const niceY = niceScale(minY, maxY);
+    const niceMinY = Math.max(1, niceY.min);
+    const niceMaxY = niceY.max;
 
     const pixX = (x: number) => padding + ((x - minX) / (maxX - minX)) * width;
     const pixY = (y: number) =>
-      padding + (1 - (y - niceY.min) / (niceY.max - niceY.min)) * height;
+      padding + (1 - (y - niceMinY) / (niceMaxY - niceMinY)) * height;
 
     return {
       minX,
       maxX,
-      minY: niceY.min,
-      maxY: niceY.max,
+      minY: niceMinY,
+      maxY: niceMaxY,
       pixX,
       pixY,
       tickSpacing: { x: 86400 * 365 * 2.5, y: niceY.spacing },
