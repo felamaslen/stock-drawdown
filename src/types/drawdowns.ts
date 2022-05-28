@@ -9,17 +9,13 @@ export type Price = {
   changePct: number;
 };
 
+export type RawPrice = Omit<Price, "date"> & { date: string };
+
 export type Drawdown = {
-  top: Pick<Price, "date" | "price">;
-  bottom: Pick<Price, "date" | "price">;
+  top: Pick<Price, "date" | "price"> & { index: number };
+  bottom: Pick<Price, "date" | "price"> & { index: number };
   declinePct: number;
-  recovery: Date | null;
+  recovery?: Pick<Price, "date"> & { index: number };
   daysTopToBottom: number;
   daysBottomToRecovery: number | null;
-};
-
-export type RawDrawdown = Omit<Drawdown, "top" | "bottom" | "recovery"> & {
-  top: RawDate<Drawdown["top"]>;
-  bottom: RawDate<Drawdown["bottom"]>;
-  recovery: string | null;
 };

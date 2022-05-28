@@ -8,28 +8,27 @@ import type {
 import dynamic from "next/dynamic";
 import Head from "next/head";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
-import { getDrawdowns } from "../repository";
+
+import { getPrices } from "../repository";
 
 const DynamicDrawdownsChart = dynamic(import("../components/DrawdownsChart"), {
   ssr: false,
 });
 
-import { Drawdown, RawDate, RawDrawdown } from "../types";
+import { Drawdown, Price, RawDate, RawPrice } from "../types";
 
 export const getStaticProps: GetStaticProps<
-  { drawdowns: RawDrawdown[] | null },
+  { prices: RawPrice[] | null },
   { page: string[] }
 > = async (ctx) => {
   const stockName = ctx.params?.page?.[0] ?? "";
-  const drawdowns = await getDrawdowns(stockName);
-  const rawDrawdowns =
-    drawdowns?.map<RawDrawdown>(({ top, bottom, recovery, ...rest }) => ({
-      top: { ...top, date: top.date.toISOString() },
-      bottom: { ...bottom, date: bottom.date.toISOString() },
-      recovery: recovery?.toISOString() ?? null,
+  const prices = await getPrices(stockName);
+  const rawPrices =
+    prices?.map<RawPrice>(({ date, ...rest }) => ({
+      date: date.toISOString(),
       ...rest,
     })) ?? null;
-  return { props: { drawdowns: rawDrawdowns }, revalidate: 5 };
+  return { props: { prices: rawPrices }, revalidate: 5 };
 };
 
 export const getStaticPaths: GetStaticPaths = () => ({
@@ -38,25 +37,22 @@ export const getStaticPaths: GetStaticPaths = () => ({
 });
 
 const Home = ({
-  drawdowns: rawDrawdowns,
+  prices: rawPrices,
 }: InferGetStaticPropsType<typeof getStaticProps>): JSX.Element => {
-  const drawdowns = useMemo<Drawdown[] | null>(
+  const prices = useMemo<Price[] | null>(
     () =>
-      rawDrawdowns?.map<Drawdown>(({ top, bottom, recovery, ...rest }) => ({
-        top: { ...top, date: new Date(top.date) },
-        bottom: { ...bottom, date: new Date(bottom.date) },
-        recovery: recovery ? new Date(recovery) : null,
+      rawPrices?.map(({ date, ...rest }) => ({
+        date: new Date(date),
         ...rest,
       })) ?? null,
-    [rawDrawdowns]
+    [rawPrices]
   );
 
   return (
     <div>
-      <h1>Drawdowns</h1>
       <div>
-        {drawdowns ? (
-          <DynamicDrawdownsChart drawdowns={drawdowns} />
+        {prices ? (
+          <DynamicDrawdownsChart prices={prices} />
         ) : (
           <span>Not found</span>
         )}

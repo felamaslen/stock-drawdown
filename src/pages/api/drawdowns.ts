@@ -1,7 +1,8 @@
 import { NextApiRequest, NextApiResponse } from "next";
 
-import { getDrawdowns } from "../../repository";
+import { getPrices } from "../../repository";
 import { Drawdown } from "../../types";
+import { parseDrawdowns } from "../../utils";
 
 export default async function handler(
   req: NextApiRequest,
@@ -13,12 +14,13 @@ export default async function handler(
     return;
   }
 
-  const drawdowns = await getDrawdowns(name);
+  const prices = await getPrices(name);
 
-  if (!drawdowns) {
+  if (!prices) {
     res.status(404).json({ message: "Not found" });
     return;
   }
 
+  const drawdowns = parseDrawdowns(prices);
   res.status(200).json({ drawdowns });
 }
